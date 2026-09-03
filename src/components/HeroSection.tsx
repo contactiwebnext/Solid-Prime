@@ -1,6 +1,6 @@
-import React from 'react';
-import { ArrowRight, ChevronRight, Activity, ShieldAlert, Cpu, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
-import { ThreeCanvas } from './ThreeCanvas';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowRight, ChevronRight, Activity, ShieldAlert, Cpu, BarChart3, TrendingUp, Sparkles, Volume2, VolumeX, Play, Pause } from 'lucide-react';
+import heroBgImage from '../assets/images/hero_fintech_background_1788470269304.jpg';
 
 interface HeroSectionProps {
   onOpenGetStarted: () => void;
@@ -11,6 +11,66 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenGetStarted,
   onExplorePlatform,
 }) => {
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    vid.defaultMuted = true;
+    vid.muted = true;
+    vid.playsInline = true;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleLoaded = () => setIsVideoLoaded(true);
+
+    vid.addEventListener('play', handlePlay);
+    vid.addEventListener('pause', handlePause);
+    vid.addEventListener('loadeddata', handleLoaded);
+
+    const playPromise = vid.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.log('Video autoplay deferred:', err);
+          setIsPlaying(false);
+        });
+    }
+
+    return () => {
+      vid.removeEventListener('play', handlePlay);
+      vid.removeEventListener('pause', handlePause);
+      vid.removeEventListener('loadeddata', handleLoaded);
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
+      if (!nextMuted && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
   // Demo ticker feed data with realistic market structures, clearly labeled
   const demoTickerData = [
     { symbol: 'S&P 500 (SPX)', price: '5,842.10', change: '+0.64%', isUp: true },
@@ -24,17 +84,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       id="home"
-      className="relative min-h-[92vh] flex flex-col justify-center pt-28 pb-16 overflow-hidden bg-gradient-to-b from-[#020617] via-[#050B1E] to-[#020617]"
+      className="relative min-h-[92vh] flex flex-col justify-center pt-28 pb-16 overflow-hidden bg-[#020617]"
     >
-      {/* Background Interactive 3D Three.js Visualizer */}
-      <div className="absolute inset-0 z-0 opacity-70 pointer-events-none">
-        <ThreeCanvas className="w-full h-full" interactive={true} />
+      {/* Background Video with Poster Fallback - Fully Visible & Vivid */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        <video
+          ref={videoRef}
+          src="https://qznnc49rwvaxtyky.public.blob.vercel-storage.com/Create_video_for_trading_platform_202609040246.mp4"
+          poster={heroBgImage}
+          autoPlay
+          loop
+          muted={isMuted}
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover object-center opacity-100 brightness-110 contrast-105"
+        >
+          <source
+            src="https://qznnc49rwvaxtyky.public.blob.vercel-storage.com/Create_video_for_trading_platform_202609040246.mp4"
+            type="video/mp4"
+          />
+        </video>
+        {/* Soft, Transparent Edge Blend to Ensure Smooth Section Boundaries Without Dimming Video */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/40 via-transparent to-[#020617]/70" />
       </div>
-
-      {/* Atmospheric Radial Lighting & Subtle Background Grids */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[380px] bg-blue-600/15 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute top-1/3 right-10 w-[450px] h-[320px] bg-cyan-500/10 rounded-full blur-[110px] pointer-events-none" />
-      <div className="absolute inset-0 bg-tech-grid opacity-25 pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center">
         {/* Location & Technology Notice Pill */}
@@ -57,18 +129,64 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <Cpu className="w-3.5 h-3.5 text-cyan-400" />
             <span>AI-Assisted Market Surveillance</span>
           </div>
+
+          {/* Play/Pause Video Toggle Button */}
+          <button
+            id="hero-video-play-toggle"
+            type="button"
+            onClick={togglePlay}
+            aria-label={isPlaying ? 'Pause background video' : 'Play background video'}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer active:scale-95"
+          >
+            {isPlaying ? (
+              <>
+                <Pause className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Video: Playing</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Video: Paused</span>
+              </>
+            )}
+          </button>
+
+          {/* Mute/Unmute Video Audio Toggle Button */}
+          <button
+            id="hero-video-audio-toggle"
+            type="button"
+            onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute hero background video audio' : 'Mute hero background video audio'}
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-mono backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer active:scale-95 ${
+              isMuted
+                ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-slate-300 hover:text-white'
+                : 'bg-cyan-500/15 hover:bg-cyan-500/25 border-cyan-400/50 text-cyan-200 shadow-cyan-500/20'
+            }`}
+          >
+            {isMuted ? (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                <span>Audio: Muted</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span className="text-cyan-300 font-medium">Audio: On</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* Hero Copy */}
         <div className="max-w-3xl">
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12] drop-shadow-lg">
             Smarter Investing. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-cyan-200">
               Powered by Intelligence.
             </span>
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-slate-300 font-normal leading-relaxed max-w-2xl">
+          <p className="mt-6 text-lg sm:text-xl text-slate-200 font-normal leading-relaxed max-w-2xl drop-shadow-md">
             Solid Prime brings modern investing tools, market intelligence, and AI-assisted analysis together in one streamlined platform.
           </p>
 
@@ -111,8 +229,48 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span>Simulated Real-Time Benchmarks</span>
               <span className="px-2 py-0.5 rounded bg-white/10 border border-white/10 text-[10px] text-slate-200">Demo Data</span>
             </div>
-            <div className="text-[11px] text-slate-400 font-mono">
-              Multi-Asset Pattern Surveillance Active
+            <div className="flex items-center gap-2">
+              <button
+                id="hero-benchmark-play-toggle"
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? 'Pause background video' : 'Play background video'}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 hover:text-white backdrop-blur-md transition-all cursor-pointer active:scale-95"
+              >
+                {isPlaying ? (
+                  <>
+                    <Pause className="w-3 h-3 text-cyan-400" />
+                    <span>Pause</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3 h-3 text-emerald-400" />
+                    <span>Play</span>
+                  </>
+                )}
+              </button>
+              <button
+                id="hero-benchmark-audio-toggle"
+                type="button"
+                onClick={toggleMute}
+                aria-label={isMuted ? 'Unmute background video' : 'Mute background video'}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 hover:text-white backdrop-blur-md transition-all cursor-pointer active:scale-95"
+              >
+                {isMuted ? (
+                  <>
+                    <VolumeX className="w-3 h-3 text-rose-400" />
+                    <span>Unmute</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-3 h-3 text-cyan-300 animate-pulse" />
+                    <span className="text-cyan-300">Muted</span>
+                  </>
+                )}
+              </button>
+              <div className="text-[11px] text-slate-400 font-mono hidden sm:block">
+                Surveillance Active
+              </div>
             </div>
           </div>
 
