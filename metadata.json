@@ -1,0 +1,7 @@
+{
+  "name": "Solid Prime - Online Investing & AI Trading",
+  "description": "Solid Prime brings modern investing tools, market intelligence, and AI-assisted analysis together in one streamlined platform based in Excelsior, Minnesota.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
